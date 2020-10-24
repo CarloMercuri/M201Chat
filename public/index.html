@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <title>RTS M201 Webchat</title>
+        <link rel="stylesheet" type="text/css" href="css/mainChatCSS.css" />
+        <link rel="stylesheet" type="text/css" href="css/mainChatPageCSS.css" />
+    </head>
+    <body>
+    <div id="mainContainer">
+        <div id="tabsContainer">
+            <button>Main Chat</button>
+            <button>Tab 2</button>
+            <button>Tab 3</button>
+            <button>Tab 4</button>
+        </div>
+    <div id="mainChatContainer">
+       
+            <div id="chatOutput"></div>
+            <div id="chatUsers" class="rounded"></div>
+
+            <div id="chatInputContainer"></div>
+        </div>
+    </div>
+        <script src="/socket.io/socket.io.js"></script>
+        <script src="js/main.js"></script>
+    
+
+    </body>
+</html>

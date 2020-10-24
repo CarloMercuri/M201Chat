@@ -1,0 +1,8 @@
+{
+    "appService.zipIgnorePattern": [
+        "node_modules{,/**}",
+        ".vscode{,/**}"
+    ],
+    "appService.defaultWebAppToDeploy": "/subscriptions/458e163c-0c77-4921-8d2f-9aa8d15ed546/resourceGroups/appsvc_linux_centralus/providers/Microsoft.Web/sites/M201-Webchat",
+    "appService.deploySubpath": "."
+}
