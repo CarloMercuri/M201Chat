@@ -122,6 +122,7 @@ function refreshUsersList(usersList) {
 
 function appendUser(user) {
     const usersDiv = document.createElement('div');
+    usersDiv.className = "userDiv";
     usersDiv.innerHTML = `<span style="color:${user.userColor}">${user.userName}</span>`;
     usersContainer.appendChild(usersDiv);
 }
@@ -163,7 +164,7 @@ function appendMessage(msg) {
 
     messageDiv.style.background = selectedChatDivColor;
    // messageDiv.style.height = 100;
-    messageDiv.innerHTML = `<p><span style="color:${msg.usercolor}">${msg.username} </span>: ${msg.message}</p>`;
+    messageDiv.innerHTML = `<span style="color:${msg.usercolor}">${msg.username} </span>: ${msg.message}`;
     msgContainer.appendChild(messageDiv);
 
     // scroll chat to bottom

@@ -109,15 +109,15 @@ io.on('connection', socket => {
         const user = db.getUser(socket.handshake.address);
         //console.log(`${user.userName}: ${msg}`)
         if(msg.charAt(0) === '/') {
-            
-            if(msg.includes('/reset')) {
+
+            if(msg.substring(1, 6) === "reset")
+            {
                 if(user.authLevel === 2)
                 {
                     io.emit('CHAT_UPDATE', db.resetMessages());
                 }
-                
-
             }
+
 
             return;
         }

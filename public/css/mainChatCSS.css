@@ -130,6 +130,10 @@ body{
 	
 }
 
+#chatUsers userDiv {
+	margin-left: 5px;
+}
+
 #chatTopBar{
 	height:40px;
 	background:url('../img/solid_gray.jpg') repeat-x #d0d0d0;
