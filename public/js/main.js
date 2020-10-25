@@ -13,6 +13,9 @@ const chatDivColor1 = "#777";
 const chatDivColor2 = "#666";
 let selectedChatDivColor = "#666";
 
+var urlRegex =/(((https?:\/\/)|(www\.))[^\s]+)/g;
+
+
 window.addEventListener('focus', onFocus);
 
 function onFocus() {
@@ -137,6 +140,7 @@ function appendLeaveJoinMessage(user, join) {
     }
 
     messageDiv.style.background = selectedChatDivColor;
+
     if(leave) {
         messageDiv.innerHTML = `<p><span style="color:${user.userColor}">${user.userName} </span>: has joined the chat.</p>`;
     } else {
@@ -153,6 +157,30 @@ function appendLeaveJoinMessage(user, join) {
 
 
 
+function formatMessage(msg) {
+    var returnString = `<span style="color:${msg.usercolor}">${msg.username} </span>: `
+
+    // First we check for HTML
+    msg.message = msg.message.replace(urlRegex, function(url) {
+        return '<a href="' + url + '" target="_blank">' + url + '</a>';
+    });
+
+
+    var index = msg.message.indexOf("<a href=");
+    if(index !== -1)
+    {
+        console.log("found");
+    }
+
+   
+    //returnString.concat
+    //<a href="https://www.google.com/" target="_blank">thesitewizard.com</a>`;
+    return returnString.concat(msg.message);
+    //return `<a href="http://www.google.com/" target="_blank">thesitewizard.com</a>`;
+}
+
+
+
 function appendMessage(msg) {
     const messageDiv = document.createElement('div');
     
@@ -163,8 +191,11 @@ function appendMessage(msg) {
     }
 
     messageDiv.style.background = selectedChatDivColor;
+
+    const formattedMsg = formatMessage(msg);
    // messageDiv.style.height = 100;
-    messageDiv.innerHTML = `<span style="color:${msg.usercolor}">${msg.username} </span>: ${msg.message}`;
+    //messageDiv.innerHTML = `<span style="color:${msg.usercolor}">${msg.username} </span>: ${msg.message}`;
+    messageDiv.innerHTML = formattedMsg;
     msgContainer.appendChild(messageDiv);
 
     // scroll chat to bottom
