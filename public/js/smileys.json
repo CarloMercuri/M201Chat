@@ -1,0 +1,13 @@
+{
+    "smile" : {
+        "shortcut" : ":)",
+        "location" : "public/emoji/happy.png"
+    },
+    "tongueOut" : {
+        "shortcut" : ":P",
+        "location" : "public/emoji/tongue-out-1.png"
+    }
+}
+
+
+

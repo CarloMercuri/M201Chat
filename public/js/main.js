@@ -14,7 +14,14 @@ const chatDivColor2 = "#666";
 let selectedChatDivColor = "#666";
 
 var urlRegex =/(((https?:\/\/)|(www\.))[^\s]+)/g;
+var smileyRegex =/:O|:P|:D|:\||:S|:\$|:@|8o\||\+o\(|\(H\)|\(C\)|\(\?\)/g
 
+
+
+
+
+
+//const smileys = JSON.parse(smileysDB);
 
 window.addEventListener('focus', onFocus);
 
@@ -99,11 +106,11 @@ socket.on('newMessage', msg => {
 
 socket.on('CHAT_UPDATE', messageHistory => {
     msgContainer.innerHTML = '';
-    console.log('chat update');
     messageHistory.forEach(appendMessage);
 })
 
 socket.on('USER_JOINED', data => {
+    console.log("user joined");
     if(showLeaveJoinMsg) {
         appendLeaveJoinMessage(data.newUser, true);
     }
@@ -158,25 +165,38 @@ function appendLeaveJoinMessage(user, join) {
 
 
 function formatMessage(msg) {
+    // Add the username with color at the start
     var returnString = `<span style="color:${msg.usercolor}">${msg.username} </span>: `
 
-    // First we check for HTML
-    msg.message = msg.message.replace(urlRegex, function(url) {
+    // emoji
+    msg.message = smileyTizeMessage(msg.message)
+    // links
+    msg.message = hyperLinkaLizeMessage(msg.message);
+;
+
+    return returnString.concat(msg.message);
+}
+
+function smileyTizeMessage(message) {
+    
+    message = message.replace(smileyRegex, function(smiley) {
+        return 'SMILEY';
+    });
+
+    return message;
+}
+
+function hyperLinkaLizeMessage(message) {
+    message = message.replace(urlRegex, function(url) {
+        // If the URL starts with www, then we're going to add
+        // http:// ourselves, so it works
+        if(url.substring(0, 4) === 'www.') {
+            url = 'http://' + url;
+        }
         return '<a href="' + url + '" target="_blank">' + url + '</a>';
     });
 
-
-    var index = msg.message.indexOf("<a href=");
-    if(index !== -1)
-    {
-        console.log("found");
-    }
-
-   
-    //returnString.concat
-    //<a href="https://www.google.com/" target="_blank">thesitewizard.com</a>`;
-    return returnString.concat(msg.message);
-    //return `<a href="http://www.google.com/" target="_blank">thesitewizard.com</a>`;
+    return message;
 }
 
 
@@ -184,6 +204,7 @@ function formatMessage(msg) {
 function appendMessage(msg) {
     const messageDiv = document.createElement('div');
     
+    // Alternate background colors
     if (selectedChatDivColor == chatDivColor1) {
         selectedChatDivColor = chatDivColor2;
     } else {
@@ -192,9 +213,9 @@ function appendMessage(msg) {
 
     messageDiv.style.background = selectedChatDivColor;
 
+    // Format the message in HTML
     const formattedMsg = formatMessage(msg);
-   // messageDiv.style.height = 100;
-    //messageDiv.innerHTML = `<span style="color:${msg.usercolor}">${msg.username} </span>: ${msg.message}`;
+    // Assign it
     messageDiv.innerHTML = formattedMsg;
     msgContainer.appendChild(messageDiv);
 
@@ -202,10 +223,6 @@ function appendMessage(msg) {
     msgContainer.scrollTop = msgContainer.scrollHeight;
 
 }
-
-
-// Submit message
-
 
 
 
