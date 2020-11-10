@@ -1,7 +1,6 @@
 const mysql = require('mysql');
-const users = [];
+const usersData = [];
 const activeUsers = [];
-const clientSockets = [];
 const messageHistory =  [];
 
 const database = mysql.createConnection({
@@ -13,74 +12,50 @@ const database = mysql.createConnection({
 
 
 function updateUserName(address, username) {
-    const uIndex = users.findIndex(user => user.address === address);
+    const uIndex = usersData.findIndex(user => user.address === address);
     const color = hashStringToColor(username);
 
     if(uIndex !== -1) {
-        users[uIndex].userName = username;
-        users[uIndex].userColor = color;
+        usersData[uIndex].userName = username;
+        usersData[uIndex].userColor = color;
 
-        const auIndex = activeUsers.findIndex(user => user.uniqueID === users[uIndex].uniqueID);
+        const auIndex = activeUsers.findIndex(user => user.uniqueID === usersData[uIndex].uniqueID);
 
         if (auIndex !== -1) {
         activeUsers[auIndex].userName = username;
         activeUsers[auIndex].userColor = color;
         }
     }
-
-
-    
-
 }
 
 function removeActiveUser(address) {
 
-    let uindex = users.findIndex(user =>
-        user.address === address);
+    let index = activeUsers.findIndex(user => user.uniqueID === getUserID(address));
 
-        if(uindex !== -1) {
-            let auindex = users.findIndex(auser => auser.uniqueID === users[uindex].uniqueID);
-            if(auindex !== -1) {
-                activeUsers.splice(index, 1);
-            }
-            
-            
-        }
-
-        const clientsIndex = clientSockets.findIndex(client =>
-            client.handshake.address === address);
-
-            if(clientsIndex !== -1) {
-                clientSockets.splice(clientsIndex, 1);
-            }
+    if(index !== -1)
+    {
+        activeUsers.splice(index, 1);
+    }
+       
 }
-
-
 
 function updateUserSocket(address, newSocket) {
 
-    let index = clientSockets.findIndex(client => 
-        client.handshake.address === address);
+    let index = usersData.findIndex(user => 
+        user.address === address);
 
         if(index !== -1) {
-            clientSockets[index].socket = newSocket;
-        } else {
-            clientSockets.push(newSocket);
+            usersData[index].socket = newSocket;
         }
-
 }
 
-function removeUser(address) {
-    const usersIndex = users.findIndex(user => user.address === address);
-    const clientsIndex = clientSockets.findIndex(client =>
-         client.handshake.address === address);
-    if (usersIndex !== -1) {
-      users.splice(usersIndex, 1);
+function removeUserData(address) {
+    const index = usersData.findIndex(user => user.address === address);
+   
+    if (index !== -1) {
+      usersData.splice(index, 1);
     }
 
-    if(clientsIndex !== -1) {
-        clientSockets.splice(clientsIndex, 1);
-    }
 }
 
 function resetMessages() {
@@ -91,41 +66,53 @@ function resetMessages() {
 function addActiveUser(user) {
     let index = activeUsers.findIndex(auser => auser.uniqueID === user.uniqueID);
 
-    const activeUser = {userName:user.userName, userColor:user.userColor,
-                        uniqueID:user.uniqueID}
-
+   
     if(index === -1) {
+        const activeUser = {userName:user.userName, userColor:user.userColor,
+            uniqueID:user.uniqueID, userAuth:user.authLevel}
+
         activeUsers.push(activeUser);
+        return activeUser;
+    } else {
+        return activeUsers[index];
     }
    
 }
 
-
-function addUser(socket, userName, authLevel) {
+function addUserData(socket, userName, authLevel) {
     const userColor = hashStringToColor(userName);
     const address = socket.handshake.address;
     const uniqueID = generateUniqueID();
-    const user = {address, userName, authLevel, userColor, uniqueID};
-    users.push(user);
-    clientSockets.push(socket);
+    const user = {address, userName, authLevel, userColor, uniqueID, socket};
+    usersData.push(user);
+    return user;
+}
+
+function randomHsl() {
+    return "hsl(" + 360 * Math.random() + ',' +
+    (25 + 50 * Math.random()) + '%,' + 
+    (85 + 10 * Math.random()) + '%)'
+}
+
+function randomColor() {
+    "use strict";
+  
+    const randomInt = (min, max) => {
+      return Math.floor(Math.random() * (max - min + 1)) + min;
+    };
+  
+
+    var h = randomInt(0, 360);
+    var s = randomInt(42, 98);
+    var l = randomInt(40, 90);
+    return `hsl(${h},${s}%,${l}%)`;
+
 }
 
 function hashStringToColor(str) {
-    var newStr = str.concat(str, generateUniqueID());
-    var hash = djb2(newStr);
-    var r = (hash & 0xFF0000) >> 16;
-    var g = (hash & 0x00FF00) >> 8;
-    var b = hash & 0x0000FF;
-    return "#" + ("0" + r.toString(16)).substr(-2) + ("0" + g.toString(16)).substr(-2) + ("0" + b.toString(16)).substr(-2);
-  }
+    return randomColor();
+}
 
-  function djb2(str){
-    var hash = 5381;
-    for (var i = 0; i < str.length; i++) {
-      hash = ((hash << 5) + hash) + str.charCodeAt(i); /* hash * 33 + c */
-    }
-    return hash;
-  }
 function getMessageHistory() {
     return messageHistory;
 }
@@ -135,8 +122,8 @@ function getUsersList() {
     return activeUsers;
 }
 
-function addMessage(username, message, usercolor) {
-    const msg = {username, message, usercolor};
+function addMessage(username, message, usercolor, userID) {
+    const msg = {username, message, usercolor, userID};
     messageHistory.push(msg);
 }
 
@@ -147,12 +134,29 @@ function addMessage(username, message, usercolor) {
     return '_' + Math.random().toString(36).substr(2);
   };
 
-function getUser(address) {
-    return users.find(user => user.address === address);
+function getUserData(address) {
+    return usersData.find(user => user.address === address);
 }
 
-function getActiveUser(uID) {
-    return activeUsers.find(user => user.uniqueID === uID);
+function getUserID(address) {
+    user = usersData.find(user => user.address === address);
+
+    //return usersData.find(user => user.address === address).uniqueID;
+    if(user) {
+        return user.uniqueID;
+    }
+
+}
+
+function getActiveUser(address) {
+    user = activeUsers.find(user => user.uniqueID === getUserID(address));
+    if(user)
+    {
+        return user;
+    } else {
+        return null;
+    }
+    
 }
 
 function getUserFromIP(address) {
@@ -166,13 +170,14 @@ function addUserToDB(address) {
 
 
 module.exports = {
-    addUser,
-    getUser,
+    addUserData,
+    getUserData,
+    getUserID,
     updateUserName,
     addMessage,
     getMessageHistory,
     updateUserSocket,
-    removeUser,
+    removeUserData,
     getUsersList,
     resetMessages,
     addActiveUser,

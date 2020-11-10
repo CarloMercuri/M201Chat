@@ -20,94 +20,84 @@ server.listen(PORT, () => console.log(`Server running on port ${PORT}`));
 io.on('connection', socket => {
 
     // Basically check if the IP address has a user profile to it
-    user = db.getUser(socket.handshake.address);
+    userData = db.getUserData(socket.handshake.address);
     
-    if(!user) {
-        // If not, we create one with default authlevel and username
-        let authLevel = 1;
-        if(socket.handshake.address === '::1') {
-            authLevel = 2;
-        }
-        // hi
-        db.addUser(socket, '', authLevel); // add base user with base authentication
-
-        // That's not enough to be authenticated. Keeping this process in case
-        // of future accounts / permissions system
+    if(!userData) {
         socket.emit('AUTH_NEEDED');
-    } else {
-        // If the profile exists, but there is no previous username attached to it,
-        // we promt the user to input his username. authLevel is still only just
-        // groundwork for future implementations
-        if(user.authLevel === 0 || user.userName === '') {
-            socket.emit('AUTH_NEEDED');
-        }else{
+    } else{
             // If the user profile exists, and the user has a username to it
             // (basically means it already used the chat before), then
             // we accept the connection and send the other active users
             // the message that he joined
 
-            db.addActiveUser(user);
+            const aUser = db.addActiveUser(user);
 
-            socket.emit('AUTH_SUCCESSFUL');
+            socket.emit('AUTH_SUCCESSFUL', aUser);
             
-            const uJoinStruct = {
-                newUser: user,
-                usersList: db.getUsersList()
-            }
-
-            socket.broadcast.emit('USER_JOINED', uJoinStruct);
+            socket.broadcast.emit('USER_JOINED', aUser);
             
             // Then we update him with chat messages and active users
-            updateUser(socket);
+            getUserUpToDate(socket);
         }
-    }
+
 
     
     socket.on('disconnect', () => {
         // remove from active users and broadcast the information.
         // Need to look into doing this another way because of page refreshes.
         // Not the end of the world, but annoys me.
-        db.removeActiveUser(db.getUser(socket.handshake.address).uniqueID);
-            io.emit('USER_DISCONNECT', db.getUsersList());
-        
-    });
-
-    // This happens in 2 cases:
-    // 1) a new ip joins the chat, who needs to choose a username
-    // 2) an existing user changes his username
-    socket.on('USERNAME_SUBMIT', (username) => {
-        
-        
-        user = db.getUser(socket.handshake.address);
+        user = db.getActiveUser(socket.handshake.address);
 
         if(user) {
-            db.addActiveUser(user);
+            io.emit('USER_DISCONNECT', user);
+            db.removeActiveUser(socket.handshake.address);
         }
+ 
+    });
 
+    socket.on('USERNAME_CHANGE', (username) => {
         db.updateUserName(socket.handshake.address, username);
-        updateUser(socket);
-        socket.emit('AUTH_SUCCESSFUL', username);
+        let user = db.getActiveUser(socket.handshake.address);
 
-        const uJoinStruct = {
-            newUser: user,
-            usersList: db.getUsersList()
-        }
-
-        socket.broadcast.emit('USER_JOINED', uJoinStruct);
+        socket.broadcast.emit('USER_NAME_CHANGE', user);
 
     });
 
-    socket.on('on-connect-username', (username) => {
-        // If agreed
-        
-        
+    // This happens with the initial name submit, where the user is not yet
+    // added to usersData
+    socket.on('USERNAME_SUBMIT', (username) => {
+
+        let authLevel = 1;
+
+        if(socket.handshake.address === '::1') {
+            authLevel = 2;
+        }
+
+        let userData = db.addUserData(socket, username, authLevel); // add base user with base authentication
+        let user = db.addActiveUser(userData);
+
+
+        socket.emit('AUTH_SUCCESSFUL', user);
+
+        socket.broadcast.emit('USER_JOINED', user);
+        getUserUpToDate(socket);
 
     });
 
     // Listens for a chatsubmission
-    socket.on('chatMsgSubmit', (msg) => {
-        const user = db.getUser(socket.handshake.address);
-        //console.log(`${user.userName}: ${msg}`)
+    socket.on('CHAT_MSG_SUBMIT', (msg) => {
+
+        let activeUser = db.getActiveUser(socket.handshake.address);
+
+        // the users always need to get authorization first (aka choose a username)
+        // but... you never know
+        if(!activeUser) {
+            console.log("Unauthorized user");
+            return;
+        }
+
+        
+
         if(msg.charAt(0) === '/') {
 
             if(msg.substring(1, 6) === "reset")
@@ -118,37 +108,39 @@ io.on('connection', socket => {
                 }
             }
 
+            if(msg.substring(1, 6) === "admin" && msg.charAt(6) === ' ') {
+                if(msg.substring(7) === "adminpw") {
+                    const user = db.getUserData(socket.handshake.address);
+                    user.authLevel = 2;
+                }
+            }
+
 
             return;
         }
         
         const msgStruct = {
-            username: `${user.userName}`,
+            userName: `${activeUser.userName}`,
             message: msg,
-            usercolor: `${user.userColor}`
+            userColor: `${activeUser.userColor}`,
+            userID: activeUser.uniqueID
         }
 
         db.addMessage(
-            msgStruct.username,
+            msgStruct.userName,
             msgStruct.message,
-            msgStruct.usercolor
+            msgStruct.userColor,
+            msgStruct.userID
             );
 
+        socket.broadcast.emit('NEW_CHAT_MESSAGE', msgStruct);
 
-        io.emit('newMessage', msgStruct);
     });
 });
 
-function updateUser(socket) {
-    db.updateUserSocket(socket.handshake.address, socket);
+function getUserUpToDate(socket) {
     socket.emit('CHAT_UPDATE', db.getMessageHistory());
     socket.emit('USERS_UPDATE', db.getUsersList());
 }
 
-function authenticateUser(socket) {
-    
-}
 
-io.on('Reply', message =>{
-    console.log('hi');
-});
