@@ -72,7 +72,6 @@ socket.on('AUTH_SUCCESSFUL', (user) => {
     
         e.target.elements.chatMsgInput.value ='';
 
-        console.log(myself_userName);
 
         const msgStruct = {
             userName: `${myself_userName}`,
@@ -164,7 +163,6 @@ function addNewUser(user) {
     activeUsersList.push(user);
     activeUsersList.sort((a, b) => a.userName.localeCompare(b.userName));
     activeUsersList.forEach((user) => {
-        console.log(user.userName);
     })
 
     refreshUsersList();
@@ -187,37 +185,21 @@ function appendUser(user) {
     const usersDiv = document.createElement('div');
     const usersBtn = document.createElement('button');
 
-    function userClicked() {
-        const dropDown = document.createElement('div');
-        dropDown.className = "dropdown-content";
-        dropDown.innerHTML = 
-        `<a href="#">Link 1</a>
-        <a href="#">Link 2</a>
-        <a href="#">Link 3</a>`;
-        usersBtn.append(dropDown);
-        
-    }
+    
 
-    usersBtn.onclick = userClicked();
+    //usersBtn.onclick = userClicked;
+
+    usersBtn.addEventListener('click', function () {
+        console.log(`clicked on id: ${user.uniqueID}`);
+    });
+
     usersBtn.className = "userButton";
     usersBtn.innerHTML = `<span style="color:${user.userColor}">${user.userName}</span>`;
 
     usersDiv.append(usersBtn);
-    usersDiv.id = "userDiv";
     usersContainer.appendChild(usersDiv);
 }
 
-function userClicked() {
-    const dropDown = document.createElement('div');
-    dropDown.className = "dropdown-content";
-
-    dropDown.innerHTML = 
-    `<a href="#">Link 1</a>
-    <a href="#">Link 2</a>
-    <a href="#">Link 3</a>`;
-    
-    
-}
 
 function appendLeaveJoinMessage(user, join) {
     const bodyDiv = document.createElement('div');
